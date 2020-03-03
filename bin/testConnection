@@ -132,7 +132,6 @@ if [ -z "${runInPod}" ]; then
   eval ${_command}
 else
   echo -e "Testing connections from $(getProjectName)/${podName} ..."
-  runInContainer \
-    "${podName}" \
-    "${_command}"
+  _runCmd="runInContainer -s ${SHELL_CMD} ${podName} ${_command}"
+  eval ${_runCmd}
 fi

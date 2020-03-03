@@ -943,10 +943,11 @@ runInContainer() {
     local OPTIND
     local unset _verbose
     local unset _flags
-    while getopts vi FLAG; do
+    while getopts vis: FLAG; do
       case $FLAG in
         v ) local _verbose=1 ;;
         i ) local _flags="-i -t" ;;
+        s ) local _shell=$OPTARG ;;
       esac
     done
     shift $((OPTIND-1))
@@ -965,6 +966,10 @@ runInContainer() {
       OC_CMD="oc"
     fi
 
+    if [ -z "${_shell}" ]; then
+      _shell="bash"
+    fi
+
     # Get name of a currently deployed pod by label and index
     _podInstanceName=$(getPodByName "${_podName}" "${_podIndex}")
     if [ ! -z "${_podInstanceName}" ]; then
@@ -972,7 +977,7 @@ runInContainer() {
         echo -e "\nExecuting command on $(getProjectName)/${_podInstanceName}:"
         echo -e "\t${_command}\n"
       fi
-      ${OC_CMD} exec ${_flags} -n $(getProjectName) "${_podInstanceName}" -- bash -c "${_command:-echo Hello}"
+      ${OC_CMD} exec ${_flags} -n $(getProjectName) "${_podInstanceName}" -- ${_shell} -c "${_command:-echo Hello}"
     else
       if [ ! -z "${_verbose}" ]; then
         echoWarning "\nrunInContainer; a running instance of $(getProjectName)/${_podName} was not found.\n"
