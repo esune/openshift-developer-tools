@@ -19,11 +19,15 @@ usage() {
     $0 -n devex-von-tools -p django google.com:80
 
     $0 -n devex-von-tools -p django -f ./listOfUrisToTest.txt
+    
+    $0 -n devex-von-tools -p django -f ./listOfUrisToTest.txt -s sh
 
   Standard Options:
 
     -f read the connection list from a file
        Connections are expected to be listed as host:port, one per line
+    
+    -s the shell to use when running the test. Defaults to bash if omitted.
 
     -h prints the usage for the script
 
@@ -71,9 +75,10 @@ fi
 # =================================================================================================================
 # Initialization:
 # -----------------------------------------------------------------------------------------------------------------
-while getopts f:n:p:h FLAG; do
+while getopts f:s:n:p:h FLAG; do
   case $FLAG in
     f) export listFile=$OPTARG ;;
+    s) export SHELL_CMD=$OPTARG ;;
     n) export FULLY_QUALIFIED_NAMESPACE=$OPTARG ;;
     p) export podName=$OPTARG ;;
     h ) usage ;;
@@ -96,6 +101,10 @@ if [ -z "${list}" ]; then
   usage
 fi
 
+if [ -z "${SHELL_CMD}" ]; then
+  SHELL_CMD="bash"
+fi
+
 if [ ! -z "${FULLY_QUALIFIED_NAMESPACE}" ] || [ ! -z "${podName}" ]; then
   if [ -z "${FULLY_QUALIFIED_NAMESPACE}" ] || [ -z "${podName}" ]; then
     echoError \\n"When using any of the OpenShift options, you MUST specify them all."\\n
@@ -115,7 +124,7 @@ for item in ${list}; do
   host=${segments[0]}
   port=${segments[1]}
 
-  _command+="echo -n ${host}:${port} && timeout 1 bash -c \"cat < /dev/null > /dev/tcp/${host}/${port}\" && echo ' - Open' || echo ' - Closed';"
+  _command+="echo -n ${host}:${port} && timeout 1 ${SHELL_CMD} -c \"cat < /dev/null > /dev/tcp/${host}/${port}\" && echo ' - Open' || echo ' - Closed';"
 done
 
 if [ -z "${runInPod}" ]; then
